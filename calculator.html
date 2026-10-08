@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculator</title>
+
+<style>
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #f2f2f2;
+    font-family: Arial, sans-serif;
+}
+
+.calculator {
+    width: 330px;
+    padding: 18px;
+    background: #19191d;
+    border-radius: 25px;
+}
+
+/* Display */
+#display {
+    width: 100%;
+    height: 75px;
+    margin-bottom: 12px;
+    padding: 10px;
+    border: none;
+    border-radius: 15px;
+    background: #34343f;
+    color: white;
+    font-size: 32px;
+    text-align: right;
+}
+
+/* Scientific buttons */
+.scientific {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.scientific button {
+    height: 35px;
+    border: none;
+    background: transparent;
+    color: white;
+    font-size: 22px;
+}
+
+/* Main buttons */
+.buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+}
+
+button {
+    width: 60px;
+    height: 60px;
+    border: none;
+    border-radius: 50%;
+    font-size: 20px;
+    cursor: pointer;
+    background: #222328;
+    color: white;
+}
+
+button:active {
+    transform: scale(0.94);
+}
+
+.operator {
+    background: #aaa8c0;
+    color: #17171b;
+}
+
+.clear {
+    background: #ffd5eb;
+    color: #351c2c;
+}
+
+.equals {
+    background: #d8d9ff;
+    color: #25253a;
+}
+
+@media (max-width: 350px) {
+    .calculator {
+        width: 310px;
+        padding: 15px;
+    }
+
+    button {
+        width: 56px;
+        height: 56px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="calculator">
+
+    <input type="text" id="display" value="0" readonly>
+
+    <!-- Scientific -->
+    <div class="scientific">
+        <button onclick="sqrt()">√</button>
+        <button onclick="add('π')">π</button>
+        <button onclick="add('^')">^</button>
+        <button onclick="factorial()">!</button>
+    </div>
+
+    <!-- Buttons -->
+    <div class="buttons">
+
+        <button class="clear" onclick="clearDisplay()">AC</button>
+        <button class="operator" onclick="add('(')">( )</button>
+        <button class="operator" onclick="percent()">%</button>
+        <button class="operator" onclick="add('/')">÷</button>
+
+        <button onclick="add('7')">7</button>
+        <button onclick="add('8')">8</button>
+        <button onclick="add('9')">9</button>
+        <button class="operator" onclick="add('*')">×</button>
+
+        <button onclick="add('4')">4</button>
+        <button onclick="add('5')">5</button>
+        <button onclick="add('6')">6</button>
+        <button class="operator" onclick="add('-')">−</button>
+
+        <button onclick="add('1')">1</button>
+        <button onclick="add('2')">2</button>
+        <button onclick="add('3')">3</button>
+        <button class="operator" onclick="add('+')">+</button>
+
+        <button onclick="add('0')">0</button>
+        <button onclick="add('.')">.</button>
+        <button onclick="deleteLast()">⌫</button>
+        <button class="equals" onclick="calculate()">=</button>
+
+    </div>
+
+</div>
+
+<script>
+
+let display = document.getElementById("display");
+
+function add(value) {
+
+    if (display.value === "0") {
+        display.value = value;
+    } else {
+        display.value += value;
+    }
+}
+
+function clearDisplay() {
+    display.value = "0";
+}
+
+function deleteLast() {
+
+    if (display.value.length <= 1) {
+        display.value = "0";
+    } else {
+        display.value = display.value.slice(0, -1);
+    }
+}
+
+function calculate() {
+
+    try {
+
+        let expression = display.value
+            .replace(/×/g, "*")
+            .replace(/÷/g, "/")
+            .replace(/π/g, "Math.PI")
+            .replace(/\^/g, "**");
+
+        let result = Function(
+            '"use strict"; return (' + expression + ')'
+        )();
+
+        display.value = result;
+
+    } catch {
+        display.value = "Error";
+    }
+}
+
+function percent() {
+
+    let value = parseFloat(display.value);
+
+    if (!isNaN(value)) {
+        display.value = value / 100;
+    }
+}
+
+function sqrt() {
+
+    let value = parseFloat(display.value);
+
+    if (value >= 0) {
+        display.value = Math.sqrt(value);
+    } else {
+        display.value = "Error";
+    }
+}
+
+function factorial() {
+
+    let value = parseInt(display.value);
+
+    if (value < 0 || isNaN(value)) {
+        display.value = "Error";
+        return;
+    }
+
+    let result = 1;
+
+    for (let i = 2; i <= value; i++) {
+        result *= i;
+    }
+
+    display.value = result;
+}
+
+</script>
+
+</body>
+</html>
