@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta id="metaTheme" name="theme-color" content="#6c5ce7">
+<title>NoteFlow</title>
+
+<style>
+:root{
+  --bg:#f6f7fb;
+  --card:#fff;
+  --text:#17171c;
+  --muted:#777983;
+  --primary:#6c5ce7;
+  --border:#e5e5eb;
+  --danger:#ef5350;
+  --shadow:0 12px 35px rgba(40,30,90,.09);
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+body{background:var(--bg);color:var(--text);transition:.2s}
+body.dark{
+  --bg:#101116;--card:#191a21;--text:#f5f5f7;--muted:#a0a1ab;
+  --border:#2b2c35;--shadow:0 12px 35px rgba(0,0,0,.28)
+}
+button,input,textarea,select{font:inherit}
+button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+
+.app{max-width:1180px;margin:auto;padding-bottom:100px}
+header{padding:28px 22px 12px}
+.header-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-icon{
+  width:46px;height:46px;border-radius:14px;display:grid;place-items:center;
+  color:white;font-size:24px;background:var(--primary);
+}
+.logo h1{font-size:24px;margin:0}
+.logo p{font-size:12px;color:var(--muted);margin:3px 0 0;transition:opacity .18s ease}
+.icon-btn{
+  width:44px;height:44px;border-radius:14px;border:1px solid var(--border);
+  background:var(--card);color:var(--text);cursor:pointer
+}
+
+.search-area{padding:0 22px;margin-top:14px}
+.search-box{
+  display:flex;align-items:center;gap:10px;padding:4px 16px;
+  background:var(--card);border:1px solid var(--border);border-radius:18px;
+  box-shadow:var(--shadow)
+}
+.search-box span{font-size:22px}
+.search-box input{
+  width:100%;border:0;outline:0;background:transparent;color:var(--text);
+  padding:14px 0;font-size:15px
+}
+
+.filters{
+  display:flex;gap:9px;padding:0 22px;margin-top:14px;
+  overflow-x:auto;scrollbar-width:none
+}
+.filters::-webkit-scrollbar{display:none}
+.filter{
+  flex:0 0 auto;border:1px solid var(--border);background:var(--card);
+  color:var(--muted);border-radius:999px;padding:10px 16px;cursor:pointer;
+  font-size:13px
+}
+.filter.active{background:var(--primary);border-color:var(--primary);color:#fff}
+
+main{padding:0 22px}
+.section-title{display:flex;justify-content:space-between;align-items:center;margin:28px 0 14px}
+.section-title h2{font-size:18px;margin:0}
+.section-title span{font-size:12px;color:var(--muted)}
+
+.notes-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.note{
+  position:relative;min-height:190px;padding:20px;border-radius:21px;
+  cursor:pointer;transition:.18s;border:1px solid rgba(0,0,0,.035);
+  overflow:hidden
+}
+.note:hover{transform:translateY(-3px);box-shadow:var(--shadow)}
+.note:active{transform:scale(.99)}
+.note.purple{background:#eeeaff}.note.blue{background:#e7f3ff}
+.note.green{background:#e8f8ed}.note.yellow{background:#fff4d9}
+.note.pink{background:#ffe8f0}
+.dark .note.purple{background:#282340}.dark .note.blue{background:#1d3041}
+.dark .note.green{background:#203528}.dark .note.yellow{background:#3a301d}
+.dark .note.pink{background:#3b2530}
+.note-top{display:flex;justify-content:space-between;gap:10px}
+.note-title{font-size:17px;font-weight:750;word-break:break-word}
+.note-body{
+  margin-top:10px;color:#686974;font-size:13px;line-height:1.6;
+  white-space:pre-wrap;display:-webkit-box;-webkit-line-clamp:5;
+  -webkit-box-orient:vertical;overflow:hidden
+}
+.dark .note-body{color:#b8b9c1}
+.pin{font-size:15px}
+.note-bottom{
+  position:absolute;left:20px;right:20px;bottom:17px;
+  display:flex;justify-content:space-between;align-items:center;gap:8px
+}
+.tag{
+  max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  padding:5px 9px;border-radius:8px;background:rgba(255,255,255,.55);
+  color:#555;font-size:10px
+}
+.dark .tag{background:rgba(255,255,255,.08);color:#ddd}
+.date{font-size:10px;color:var(--muted)}
+
+.empty{text-align:center;padding:75px 20px;color:var(--muted)}
+.empty-icon{font-size:48px;margin-bottom:10px}
+.empty h3{margin:0 0 6px;color:var(--text)}
+
+.fab{
+  position:fixed;right:26px;bottom:25px;width:64px;height:64px;border:0;
+  border-radius:20px;color:#fff;background:linear-gradient(135deg,#7767ee,#5747d4);
+  box-shadow:0 12px 30px rgba(108,92,231,.35);font-size:32px;cursor:pointer;
+  z-index:10
+}
+.fab:active{transform:scale(.94)}
+
+.overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.52);backdrop-filter:blur(5px);
+  display:none;align-items:center;justify-content:center;padding:18px;z-index:100
+}
+.overlay.show{display:flex}
+.modal{
+  width:min(650px,100%);max-height:92vh;overflow:auto;background:var(--card);
+  color:var(--text);border-radius:25px;padding:23px;
+  box-shadow:0 25px 80px rgba(0,0,0,.3)
+}
+.modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.modal-head h2{margin:0;font-size:21px}
+.close{border:0;background:transparent;color:var(--muted);font-size:28px;cursor:pointer}
+.field{margin-bottom:14px}
+.field label{display:block;color:var(--muted);font-size:12px;margin-bottom:7px}
+.field input,.field textarea,.field select{
+  width:100%;border:1px solid var(--border);outline:0;border-radius:13px;
+  background:var(--bg);color:var(--text);padding:13px
+}
+.field textarea{min-height:210px;resize:vertical;line-height:1.6}
+.colors{display:flex;gap:9px}
+.color-option{
+  width:31px;height:31px;border-radius:50%;border:3px solid transparent;cursor:pointer
+}
+.color-option.selected{border-color:var(--text)}
+.c-purple{background:#b7a9ff}.c-blue{background:#8ac5ff}
+.c-green{background:#8bd6a1}.c-yellow{background:#ffd36e}.c-pink{background:#ff9ebd}
+.pin-row{display:flex;align-items:center;gap:8px;font-size:13px;margin:8px 0 18px}
+.pin-row input{accent-color:var(--primary)}
+.modal-actions{display:flex;gap:10px}
+.btn{flex:1;border:0;border-radius:13px;padding:13px;cursor:pointer;font-weight:700}
+.primary{background:var(--primary);color:#fff}
+.secondary{background:var(--bg);color:var(--text);border:1px solid var(--border)}
+.danger{background:var(--danger);color:#fff}
+
+@media(max-width:850px){.notes-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:580px){
+  header{padding:20px 18px 10px}.search-area{padding:0 18px}
+  .filters{padding:0 18px}main{padding:0 18px}
+  .notes-grid{grid-template-columns:1fr}
+  .note{min-height:180px}
+  .fab{right:18px;bottom:18px}
+}
+
+/* HEADER MENU */
+.header-left{display:flex;align-items:center;gap:9px}
+.menu-btn{width:44px;height:44px;border:1px solid var(--border);border-radius:14px;background:var(--card);color:var(--text);font-size:22px;cursor:pointer;display:grid;place-items:center}
+.drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(3px);visibility:hidden;opacity:0;transition:.22s;z-index:200}
+.drawer-overlay.show{visibility:visible;opacity:1}
+.drawer{width:min(310px,88vw);height:100%;background:var(--card);padding:22px 16px;transform:translateX(-105%);transition:.25s;box-shadow:18px 0 50px rgba(0,0,0,.2);overflow:auto}
+.drawer-overlay.show .drawer{transform:translateX(0)}
+.drawer-head{display:flex;align-items:center;justify-content:space-between;padding:3px 5px 20px;border-bottom:1px solid var(--border)}
+.drawer-brand{display:flex;align-items:center;gap:10px}.drawer-brand-icon{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;color:#fff;background:var(--primary)}
+.drawer-brand strong{font-size:17px}.drawer-close{border:0;background:transparent;color:var(--muted);font-size:27px;cursor:pointer}
+.drawer-section{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin:21px 9px 8px}.about-section-label{margin-top:18px}
+.drawer-item{width:100%;display:flex;align-items:center;gap:12px;border:0;background:transparent;color:var(--text);padding:13px 12px;border-radius:13px;cursor:pointer;text-align:left;font-size:14px;margin-bottom:3px}
+.drawer-item.active,.drawer-item:hover{background:rgba(108,92,231,.1)}.item-icon{width:23px;text-align:center}
+.drawer-footer{border-top:1px solid var(--border);margin-top:22px;padding:15px 10px;color:var(--muted);font-size:11px}
+/* SETTINGS OVERLAY - fixed modal, never part of the home layout */
+.settings-overlay{
+  position:fixed;
+  inset:0;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+  background:rgba(0,0,0,.52);
+  backdrop-filter:blur(5px);
+  -webkit-backdrop-filter:blur(5px);
+  z-index:500;
+}
+.settings-overlay.show{display:flex;}
+.settings-overlay .settings-panel{
+  position:relative;
+  width:min(620px,100%);
+  max-height:min(92vh,760px);
+  overflow-y:auto;
+  overscroll-behavior:contain;
+}
+@media(max-width:580px){
+  .settings-overlay{padding:12px;}
+  .settings-overlay .settings-panel{max-height:94vh;border-radius:20px;padding:18px;}
+}
+
+
+/* ABOUT OVERLAY */
+.about-overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.52);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);z-index:510;}
+.about-overlay.show{display:flex;}
+.about-panel{position:relative;width:min(560px,100%);max-height:92vh;overflow:auto;background:var(--card);color:var(--text);border-radius:26px;padding:24px;box-shadow:0 25px 80px rgba(0,0,0,.3);}
+.about-head{display:flex;align-items:center;justify-content:space-between;padding-bottom:18px;border-bottom:1px solid var(--border);}
+.about-brand{display:flex;align-items:center;gap:12px;}
+.about-logo{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;background:var(--primary);color:#fff;font-size:25px;}
+.about-title{font-size:23px;font-weight:800;}
+.about-subtitle{font-size:12px;color:var(--muted);margin-top:3px;}
+.about-content{padding:20px 3px 5px;}
+.about-content h3{margin:0 0 8px;font-size:17px;}
+.about-content p{margin:0 0 16px;color:var(--muted);font-size:13px;line-height:1.65;}
+.about-feature{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);}
+.about-feature:last-child{border-bottom:0;}
+.about-feature-icon{width:36px;height:36px;flex:0 0 36px;border-radius:11px;display:grid;place-items:center;background:rgba(108,92,231,.1);font-size:17px;}
+.about-feature strong{display:block;font-size:13px;margin-bottom:3px;}
+.about-feature span{color:var(--muted);font-size:11px;line-height:1.45;}
+.about-info{padding:12px 0;border-top:1px solid var(--border);}
+.about-info strong{display:block;font-size:13px;margin-bottom:4px;}
+.about-info span{display:block;color:var(--muted);font-size:12px;line-height:1.55;}
+@media(max-width:580px){.about-overlay{padding:12px}.about-panel{max-height:94vh;border-radius:20px;padding:18px;}}
+
+/* SETTINGS */
+.settings-panel{width:min(620px,100%);max-height:92vh;overflow:auto;background:var(--card);color:var(--text);border-radius:26px;padding:22px;box-shadow:0 25px 80px rgba(0,0,0,.3)}
+.settings-head{display:flex;align-items:flex-start;justify-content:space-between;padding:2px 2px 20px;border-bottom:1px solid var(--border)}
+.settings-title{font-size:23px;font-weight:800}.settings-subtitle{font-size:12px;color:var(--muted);margin-top:4px}
+.settings-group{padding:20px 0;border-bottom:1px solid var(--border)}.settings-group:last-child{border-bottom:0}.settings-group-title{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.09em;margin:0 5px 9px}
+.setting-row{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:13px 5px}.setting-info{display:flex;align-items:center;gap:12px;min-width:0}.setting-icon{width:39px;height:39px;flex:0 0 39px;border-radius:12px;display:grid;place-items:center;background:rgba(108,92,231,.1);font-size:18px}.setting-icon svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.setting-info strong,.settings-action strong{display:block;font-size:14px}.setting-info small,.settings-action small{display:block;color:var(--muted);font-size:11px;margin-top:3px}
+.switch{width:48px;height:27px;border:0;border-radius:30px;background:#9da1ad;padding:3px;cursor:pointer;transition:.2s;flex:0 0 auto}.switch span{display:block;width:21px;height:21px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 2px 5px rgba(0,0,0,.2)}.switch.on{background:var(--primary)}.switch.on span{transform:translateX(21px)}
+.accent-colors{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}.accent{width:25px;height:25px;border-radius:50%;border:3px solid transparent;cursor:pointer;box-shadow:0 0 0 1px var(--border)}.accent.selected{border-color:var(--text);box-shadow:none}.accent.purple{background:#6c5ce7}.accent.blue{background:#3b82f6}.accent.green{background:#16a34a}.accent.pink{background:#ec4899}.accent.orange{background:#f97316}
+.setting-select{border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:11px;padding:9px 10px;outline:0}.settings-action{width:100%;display:flex;align-items:center;gap:12px;text-align:left;border:0;background:transparent;color:var(--text);padding:12px 5px;border-radius:13px;cursor:pointer}.settings-action:hover{background:rgba(108,92,231,.08)}.settings-action>span:nth-child(2){flex:1}.action-arrow{font-size:24px;color:var(--muted)}
+
+
+.accent-colors{display:flex;gap:12px;flex-wrap:wrap;justify-content:flex-end;align-items:center;max-width:230px}
+.accent{width:34px;height:34px;border-radius:50%;border:3px solid transparent;cursor:pointer;box-shadow:0 0 0 1px var(--border);padding:0;transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease}
+.accent:hover{transform:scale(1.08)}
+.accent[data-color="#7C3AED"]{background:#7C3AED}
+.accent[data-color="#2563EB"]{background:#2563EB}
+.accent[data-color="#10B981"]{background:#10B981}
+.accent[data-color="#F59E0B"]{background:#F59E0B}
+.accent[data-color="#EF4444"]{background:#EF4444}
+.accent[data-color="#EC4899"]{background:#EC4899}
+.accent.selected{border-color:var(--text);box-shadow:0 0 0 2px var(--card),0 0 0 4px var(--text);transform:scale(1.06)}
+@media(max-width:580px){.setting-row{align-items:flex-start;flex-direction:column}.accent-colors{justify-content:flex-start;max-width:250px}}
+
+.new-note-item{
+  background:rgba(108,92,231,.09);
+  color:var(--primary);
+  font-weight:700;
+  margin-bottom:8px;
+}
+.new-note-item:hover{background:rgba(108,92,231,.15)}
+</style>
+
+<style>
+.menu-icon{width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;margin-right:10px;flex:0 0 22px;}
+.menu-icon svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+.icon-settings svg path:first-child{fill:currentColor;stroke:none;}
+.icon-settings svg path:last-child{fill:none;}
+.icon-info svg circle{fill:none;}
+.menu-icon + *{}
+.item-icon{display:none;}
+</style>
+</head>
+
+<body>
+<div class="app">
+
+<header>
+  <div class="header-row">
+    <div class="header-left">
+      <button type="button" class="menu-btn" id="menuBtn" aria-label="Open menu">☰</button>
+      <div class="logo">
+      <div class="logo-icon">✦</div>
+      <div>
+        <h1>NoteFlow</h1>
+        <p id="randomThought">Small thoughts can become big ideas.</p>
+      </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="search-area">
+  <div class="search-box">
+    <span>⌕</span>
+    <input id="searchInput" type="search" placeholder="Search your notes..." autocomplete="off">
+  </div>
+</div>
+
+<div class="filters" id="filters">
+  <button type="button" class="filter active" data-filter="all">All</button>
+  <button type="button" class="filter" data-filter="pinned">📌 Pinned</button>
+  <button type="button" class="filter" data-filter="Personal">Personal</button>
+  <button type="button" class="filter" data-filter="Work">Work</button>
+  <button type="button" class="filter" data-filter="Study">Study</button>
+  <button type="button" class="filter" data-filter="Ideas">Ideas</button>
+  <button type="button" class="filter" data-filter="Other">Other</button>
+</div>
+
+<main>
+  <div class="section-title">
+    <h2 id="sectionTitle">Your Notes</h2>
+    <span id="noteCount">0 notes</span>
+  </div>
+
+  <div id="notesGrid" class="notes-grid"></div>
+
+  <div id="emptyState" class="empty">
+    <div class="empty-icon">📝</div>
+    <h3>No notes yet</h3>
+    <p>Tap the + button to create your first note.</p>
+  </div>
+</main>
+</div>
+
+<button type="button" class="fab" id="addBtn" aria-label="Add note">＋</button>
+
+<div class="overlay" id="overlay">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-head">
+      <h2 id="modalTitle">Create Note</h2>
+      <button type="button" class="close" id="closeBtn">×</button>
+    </div>
+
+    <div class="field">
+      <label for="titleInput">Title</label>
+      <input id="titleInput" placeholder="Give your note a title..." maxlength="120">
+    </div>
+
+    <div class="field">
+      <label for="bodyInput">Note</label>
+      <textarea id="bodyInput" placeholder="Start writing..."></textarea>
+    </div>
+
+    <div class="field">
+      <label for="categoryInput">Category</label>
+      <select id="categoryInput">
+        <option>Personal</option>
+        <option>Work</option>
+        <option>Study</option>
+        <option>Ideas</option>
+        <option>Other</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="tagsInput">Tags</label>
+      <input id="tagsInput" placeholder="important, project, ideas">
+    </div>
+
+    <div class="field">
+      <label>Color</label>
+      <div class="colors" id="colors">
+        <button type="button" class="color-option c-purple selected" data-color="purple"></button>
+        <button type="button" class="color-option c-blue" data-color="blue"></button>
+        <button type="button" class="color-option c-green" data-color="green"></button>
+        <button type="button" class="color-option c-yellow" data-color="yellow"></button>
+        <button type="button" class="color-option c-pink" data-color="pink"></button>
+      </div>
+    </div>
+
+    <label class="pin-row">
+      <input type="checkbox" id="pinnedInput">
+      Pin this note
+    </label>
+
+    <div class="modal-actions">
+      <button type="button" class="btn danger" id="deleteBtn" style="display:none">Delete</button>
+      <button type="button" class="btn secondary" id="cancelBtn">Cancel</button>
+      <button type="button" class="btn primary" id="saveBtn">Save Note</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- DRAWER -->
+<div class="drawer-overlay" id="drawerOverlay"><aside class="drawer">
+<div class="drawer-head"><div class="drawer-brand"><div class="drawer-brand-icon">✦</div><strong>NoteFlow</strong></div><button type="button" class="drawer-close" id="drawerClose">×</button></div>
+<div class="drawer-section">Options</div>
+<button type="button" class="drawer-item" id="drawerSettings">Settings</button>
+
+<div class="drawer-section about-section-label">About</div>
+<button type="button" class="drawer-item" id="drawerAbout">About NoteFlow</button>
+</aside></div>
+<!-- SETTINGS -->
+<div class="settings-overlay" id="settingsOverlay"><div class="settings-panel">
+<div class="settings-head"><div><div class="settings-title">Settings</div><div class="settings-subtitle">Customize your NoteFlow experience</div></div><button type="button" class="drawer-close" id="settingsClose">×</button></div>
+<div class="settings-group"><div class="settings-group-title">Theme</div>
+<div class="setting-row"><div class="setting-info"><div class="setting-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17M3.5 12h17M6 6l12 12M18 6L6 18" fill="none"/></svg></div><div><strong>Choose colour</strong><small>Choose an accent colour</small></div></div><div class="accent-colors" id="accentColors" aria-label="Accent colours">
+<button type="button" class="accent" data-color="#7C3AED" aria-label="Purple" style="background:#7C3AED"></button>
+<button type="button" class="accent" data-color="#2563EB" aria-label="Blue" style="background:#2563EB"></button>
+<button type="button" class="accent" data-color="#10B981" aria-label="Green" style="background:#10B981"></button>
+<button type="button" class="accent" data-color="#F59E0B" aria-label="Orange" style="background:#F59E0B"></button>
+<button type="button" class="accent" data-color="#EF4444" aria-label="Red" style="background:#EF4444"></button>
+<button type="button" class="accent" data-color="#EC4899" aria-label="Pink" style="background:#EC4899"></button>
+</div></div>
+<div class="setting-row"><div class="setting-info"><div class="setting-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 19L10.5 5h3L19 19M7.2 14.5h9.6"/><path d="M5 21h14"/></svg></div><div><strong>Font size</strong><small>Adjust note text size</small></div></div><select id="fontSizeSelect" class="setting-select"><option value="small">Small</option><option value="medium">Medium</option><option value="large">Large</option></select></div>
+</div></div></div>
+
+<!-- ABOUT -->
+<div class="about-overlay" id="aboutOverlay">
+  <div class="about-panel">
+    <div class="about-head">
+      <div class="about-brand">
+        <div class="about-logo" id="aboutLogo">✦</div>
+        <div><div class="about-title">About NoteFlow</div><div class="about-subtitle">A simple space for your thoughts</div></div>
+      </div>
+      <button type="button" class="drawer-close" id="aboutClose" aria-label="Close">×</button>
+    </div>
+    <div class="about-content">
+      <h3>About NoteFlow</h3>
+      <p>NoteFlow is a simple personal notes app designed to help you capture, organize, and keep your thoughts, ideas, reminders, and everyday notes in one place.</p>
+      <div class="about-info">
+        <strong>Version</strong>
+        <span>NoteFlow 1.0</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  const $ = id => document.getElementById(id);
+  let notes=[];
+  let editingId=null;
+  let selectedColor="purple";
+  let activeFilter="all";
+
+  try { notes=JSON.parse(localStorage.getItem("noteflow_notes")||"[]"); if(!Array.isArray(notes)) notes=[]; } catch(e){ notes=[]; }
+  const persist=()=>{ try{localStorage.setItem("noteflow_notes",JSON.stringify(notes));}catch(e){alert("Could not save notes in this browser.");} };
+  const escapeHTML=v=>String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
+  const formatDate=t=>new Date(t||Date.now()).toLocaleDateString(undefined,{day:"numeric",month:"short"});
+
+  function getVisibleNotes(){
+    const q=$("searchInput").value.trim().toLowerCase();
+    return notes.filter(n=>{
+      const f=activeFilter==="all" || (activeFilter==="pinned"&&n.pinned===true) || n.category===activeFilter;
+      if(!f)return false;
+      if(!q)return true;
+      return [n.title,n.body,n.category,...(Array.isArray(n.tags)?n.tags:[])].join(" ").toLowerCase().includes(q);
+    }).sort((a,b)=>Boolean(b.pinned)-Boolean(a.pinned)||(b.updated||0)-(a.updated||0));
+  }
+  function render(){
+    const grid=$("notesGrid"), empty=$("emptyState"), visible=getVisibleNotes(); grid.innerHTML="";
+    $("noteCount").textContent=visible.length+(visible.length===1?" note":" notes");
+    const names={all:"Your Notes",pinned:"Pinned Notes",Personal:"Personal Notes",Work:"Work Notes",Study:"Study Notes",Ideas:"Ideas",Other:"Other Notes"};
+    $("sectionTitle").textContent=names[activeFilter]||"Your Notes";
+    if(!visible.length){empty.style.display="block";empty.querySelector("h3").textContent=$("searchInput").value.trim()?"No matching notes":"No notes yet";return;}
+    empty.style.display="none";
+    visible.forEach(n=>{const card=document.createElement("article");card.className="note "+(n.color||"purple");card.dataset.id=n.id;card.innerHTML=`<div class="note-top"><div class="note-title">${escapeHTML(n.title||"Untitled")}</div>${n.pinned?'<div class="pin">📌</div>':''}</div><div class="note-body">${escapeHTML(n.body||"Empty note")}</div><div class="note-bottom"><span class="tag">${escapeHTML(n.category||"Personal")}</span><span class="date">${formatDate(n.updated)}</span></div>`;grid.appendChild(card);});
+  }
+  function selectColor(c){selectedColor=c;document.querySelectorAll(".color-option").forEach(b=>b.classList.toggle("selected",b.dataset.color===c));}
+  function openEditor(id=null){
+    editingId=id;
+    if(id!==null){const n=notes.find(x=>String(x.id)===String(id));if(!n)return;$("modalTitle").textContent="Edit Note";$("titleInput").value=n.title||"";$("bodyInput").value=n.body||"";$("categoryInput").value=n.category||"Personal";$("tagsInput").value=Array.isArray(n.tags)?n.tags.join(", "):"";$("pinnedInput").checked=!!n.pinned;selectColor(n.color||"purple");$("deleteBtn").style.display="block";}
+    else{$("modalTitle").textContent="Create Note";$("titleInput").value="";$("bodyInput").value="";$("categoryInput").value="Personal";$("tagsInput").value="";$("pinnedInput").checked=false;selectColor("purple");$("deleteBtn").style.display="none";}
+    $("overlay").classList.add("show");setTimeout(()=>$("titleInput").focus(),50);
+  }
+  function closeEditor(){$("overlay").classList.remove("show");editingId=null;}
+  function saveNote(){
+    const title=$("titleInput").value.trim(),body=$("bodyInput").value.trim();if(!title&&!body){alert("Please write a title or note first.");return;}
+    const data={title:title||"Untitled",body,category:$("categoryInput").value,tags:$("tagsInput").value.split(",").map(x=>x.trim()).filter(Boolean),pinned:$("pinnedInput").checked,color:selectedColor,updated:Date.now()};
+    if(editingId!==null){const i=notes.findIndex(n=>String(n.id)===String(editingId));if(i>=0)notes[i]={...notes[i],...data};}
+    else notes.push({id:Date.now().toString()+Math.random().toString(16).slice(2),...data,created:Date.now()});
+    persist();closeEditor();render();
+  }
+  function deleteNote(){if(editingId===null)return;if(!confirm("Delete this note?"))return;notes=notes.filter(n=>String(n.id)!==String(editingId));persist();closeEditor();render();}
+
+  function openDrawer(){$("drawerOverlay").classList.add("show");}
+  function closeDrawer(){$("drawerOverlay").classList.remove("show");}
+  function openSettings(){closeDrawer();$("settingsOverlay").classList.add("show");document.body.style.overflow="hidden";requestAnimationFrame(()=>syncSettingsUI());}
+  function closeSettings(){$("settingsOverlay").classList.remove("show");document.body.style.overflow="";}
+  function closeAbout(){$("aboutOverlay").classList.remove("show");document.body.style.overflow="";}
+  function showAbout(){closeDrawer();$("aboutOverlay").classList.add("show");document.body.style.overflow="hidden";}
+
+  const randomThoughts = [
+    "Small thoughts can become big ideas.",
+    "Write it down before it slips away.",
+    "One thought at a time.",
+    "Make space for your next idea.",
+    "Your ideas deserve a place to stay.",
+    "Capture the thought. Keep the idea.",
+    "A clear mind starts with a clear note.",
+    "Turn everyday thoughts into something useful.",
+    "Some of the best ideas start as random thoughts.",
+    "Think less about remembering. Start writing.",
+    "Your next great idea might be a simple thought.",
+    "Collect thoughts. Create possibilities.",
+    "Let your ideas flow.",
+    "Write now. Refine later.",
+    "Keep your thoughts close, your ideas closer.",
+    "Every note is a seed for an idea."
+  ];
+  let lastThoughtIndex = -1;
+  function showRandomThought(){
+    const el = $("randomThought");
+    if(!el) return;
+    let i;
+    do { i = Math.floor(Math.random() * randomThoughts.length); } while(randomThoughts.length > 1 && i === lastThoughtIndex);
+    lastThoughtIndex = i;
+    el.style.opacity = "0";
+    setTimeout(()=>{ el.textContent = randomThoughts[i]; el.style.opacity = "1"; }, 180);
+  }
+
+  const ACCENT_COLORS=["#7C3AED","#2563EB","#10B981","#F59E0B","#EF4444","#EC4899"];
+  function normalizeAccent(color){
+    if(typeof color!=="string") return ACCENT_COLORS[0];
+    const c=color.trim().toUpperCase();
+    return ACCENT_COLORS.includes(c) ? c : ACCENT_COLORS[0];
+  }
+  function applyAccent(color){
+    color=normalizeAccent(color);
+    document.documentElement.style.setProperty("--primary",color);
+    localStorage.setItem("noteflow_accent",color);
+    $("metaTheme")?.setAttribute("content",color);
+    document.querySelectorAll("#accentColors .accent").forEach(b=>b.classList.toggle("selected",b.dataset.color.toUpperCase()===color));
+  }
+  function syncSettingsUI(){
+    const a=normalizeAccent(localStorage.getItem("noteflow_accent")||ACCENT_COLORS[0]);
+    const f=localStorage.getItem("noteflow_font_size")||"medium";
+    $("fontSizeSelect").value=f;
+    applyAccent(a);
+  }
+
+
+  $("menuBtn").addEventListener("click",openDrawer);$("drawerClose").addEventListener("click",closeDrawer);$("drawerOverlay").addEventListener("click",e=>{if(e.target===$("drawerOverlay"))closeDrawer();});
+  $("drawerSettings").addEventListener("click",openSettings);$("drawerAbout").addEventListener("click",showAbout);
+  $("settingsClose").addEventListener("click",closeSettings);
+  $("aboutClose").addEventListener("click",closeAbout);
+  $("aboutOverlay").addEventListener("click",e=>{if(e.target===$("aboutOverlay"))closeAbout();});
+  $("settingsOverlay").addEventListener("click",e=>{if(e.target===$("settingsOverlay"))closeSettings();});
+  $("accentColors").addEventListener("click",e=>{
+    const b=e.target.closest(".accent");
+    if(b) applyAccent(b.dataset.color);
+  });
+  $("fontSizeSelect").addEventListener("change",e=>applyFontSize(e.target.value));
+  $("addBtn").addEventListener("click",()=>openEditor());$("closeBtn").addEventListener("click",closeEditor);$("cancelBtn").addEventListener("click",closeEditor);$("saveBtn").addEventListener("click",saveNote);$("deleteBtn").addEventListener("click",deleteNote);$("searchInput").addEventListener("input",render);
+  $("filters").addEventListener("click",e=>{const b=e.target.closest(".filter");if(!b)return;activeFilter=b.dataset.filter;document.querySelectorAll(".filter").forEach(x=>x.classList.toggle("active",x===b));render();});$("colors").addEventListener("click",e=>{const b=e.target.closest(".color-option");if(b)selectColor(b.dataset.color);});$("notesGrid").addEventListener("click",e=>{const c=e.target.closest(".note");if(c)openEditor(c.dataset.id);});$("overlay").addEventListener("click",e=>{if(e.target===$("overlay"))closeEditor();});
+  document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeEditor();closeDrawer();closeSettings();closeAbout();}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="n"){e.preventDefault();openEditor();}});
+  applyAccent(normalizeAccent(localStorage.getItem("noteflow_accent")||ACCENT_COLORS[0]));
+  showRandomThought();setInterval(showRandomThought,6000);applyFontSize(localStorage.getItem("noteflow_font_size")||"medium");render();syncSettingsUI();
+})();
+</script>
+</body>
+</html>
