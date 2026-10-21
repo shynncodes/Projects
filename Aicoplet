@@ -1,0 +1,9 @@
+package com.projectzero.assistant
+
+interface AIEngine {
+
+    suspend fun ask(
+        userMessage: String,
+        conversationHistory: List<Pair<String, String>> = emptyList()
+    ): String
+}
